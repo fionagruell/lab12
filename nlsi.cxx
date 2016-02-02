@@ -12,6 +12,8 @@ void init( cmplx* const psi0, const double eta, const double sigma, const double
 
 void writeToFile(const cmplx* const v, const string s, const double dx,
                  const int Nx, const double xmin);
+void stepl(cmplx* const f1, cmplx* const f0,const double dt, const double dx, const int Nx);
+void stepn(cmplx* const f1,cmplx* const f0,const double dt, const int Nx);
 //-----------------------------------
 int main(){
 
@@ -29,6 +31,8 @@ int main(){
 	stringstream strm;
 
 	cmplx* psi0 = new cmplx[Nx];
+	cmplx* psi1 = new cmplx[Nx];
+	
 
 	init(psi0, eta, dx, dt,Nx);
 
@@ -38,13 +42,47 @@ int main(){
 	for (int i = 1; i <= Na; i++) {
 
 		for (int j = 1; j <= Nk-1; j++) {
+		  stepl(psi1,psi0,dt,dx,Nx);
+		  stepn(psi0,psi1,dt,Nx);
+		  
+		  
+		 
+		  
 		}
 		strm.str("");
 		strm << "psi_" << i;
 		writeToFile(psi0,strm.str(), dx,Nx,xmin);
 	}
-
+      delete[] psi0;
+      delete[] psi1;
+      
 	return 0;
+}
+//-----------------------------------
+void stepl(cmplx* const f1, cmplx* const f0,const double dt, const double dx, const int Nx)
+{
+ const cmplx j=cmplx(0.0,1.0); 
+const cmplx alpha = j*dt/(dx*dx);
+cmplx* d=new cmplx[Nx];
+for(int i=0;i<Nx;i++) d[i] = 1.0 - 2.0*alpha;
+
+for(int i=1;i<Nx;i++){
+d[i] -= alpha/d[i-1]*alpha;
+f0[i] -= alpha/d[i-1]*f0[i-1];
+}
+f1[Nx-1] = f0[Nx-1]/d[Nx-1];
+for(int i=Nx-2;i>0; i--)
+f1[i] = (f0[i] -alpha*f1[i+1])/d[i];
+delete[] d;
+}
+//-----------------------------------
+void stepn(cmplx* const f1,cmplx* const f0,const double dt, const int Nx)
+{
+const cmplx j=cmplx(0.0,1.0);
+  for(int i=0; i<Nx; i++){
+    f1[i]=f0[i]*exp(-j*f0[i]*conj(f0[i])*dt);
+    
+}
 }
 //-----------------------------------
 void writeToFile(const cmplx* const v, const string s, const double dx,
